@@ -6,52 +6,53 @@ from PIL import Image
 import pytesseract
 
 
-def get_name(image):
-    name_image = image.crop((210, 590, 520, 670))
-    name_text = pytesseract.image_to_string(name_image)
-    return name_text
+NAME_COORDS = (210, 590, 520, 670)
+CP_COORDS = (220, 70, 460, 150)
+HP_COORDS = (400, 700, 450, 740)
+STARDUST_COORDS = (410, 1050, 500, 1100)
 
 
-def get_cp(image):
-    # isolate cp in image
-    cp_image = image.crop((220, 70, 460, 150))
-    # ocr on image
-    cp_text = pytesseract.image_to_string(cp_image)
-    cp_text = re.search('\d+', cp_text).group()
+class Config():
+    def __init__(self, coords, is_numeric=False):
+        self.coords = coords
+        self.is_numeric = is_numeric
+
+
+CONFIGS = {
+    'name': Config(NAME_COORDS),
+    'cp': Config(CP_COORDS, True),
+    'hp': Config(HP_COORDS, True),
+    'stardust': Config(STARDUST_COORDS, True),
+}
+
+
+def extract_number(text):
     try:
-        return int(cp_text)
-    except ValueError:
-        raise ValueError('Failed to process CP value from image')
-
-def get_hp(image):
-    hp_image = image.crop((400, 700, 450, 740))
-    hp_text = pytesseract.image_to_string(hp_image)
-    hp_text = re.search('\d+', hp_text).group()
-    return int(hp_text)
+        return int(re.search('\d+', text).group())
+    except (AttributeError, ValueError) as e:
+        raise ValueError("Failed to extract number from {}".format(text)) from e
 
 
-def get_powerup_stardust(image):
-    i = image.crop((410, 1050, 500, 1100))
+def process_config(image, config):
+    i = image.crop(config.coords)
     text = pytesseract.image_to_string(i)
-    text = re.search('\d+', text).group()
-    return int(text)
+    if config.is_numeric:
+        return extract_number(text)
+    return text
 
 
-def get_information(image):
-    name = get_name(image)
-    cp = get_cp(image)
-    hp = get_hp(image)
-    powerup_stardust = get_powerup_stardust(image)
-
-    data = locals()
-    del data['image']
+def process_image(image):
+    data = {}
+    for key, config in CONFIGS.items():
+        value = process_config(image, config)
+        data[key] = value
     return data
 
 
 def main():
     f = sys.argv[1]
     image = Image.open(f)
-    info = get_information(image)
+    info = process_image(image)
     print(info)
 
 
