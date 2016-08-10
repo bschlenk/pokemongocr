@@ -13,7 +13,7 @@ On OSX you can install it through brew:
 Invoke the script with the path to a screenshot as the first argument.
 
 ```
->>> ./main.py screenshots/snorlax.png
+>>> ./main.py screenshots/bulbasaur.png
 {'stardust': 2500, 'name': 'Bulbasaur', 'cp': 600, 'hp': 62}
 ```
 
